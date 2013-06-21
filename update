@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+import os
+import sys
+
+refname = sys.argv[0]
+oldrev = sys.argv[1]
+newrev = sys.argv[2]
+zero = "0000000000000000000000000000000000000000"
+
+sys.stdout.write("Enforcing Policies... \n(%s) (%s) (%s)\n" %
+                 (refname, oldrev[0:6], newrev[0:6]))
+
+
+def usage(msg=None):
+    '''
+    Print a usage message and exit with an error code
+    '''
+
+    if msg:
+        sys.stderr.write('%s\n' % str(msg))
+
+    sys.exit(1)
+
+
+def check_deletion():
+    """
+    Denies deletion of a branch
+    """
+
+    if newrev == zero:
+        usage("[POLICY] Refusing to delete this branch")
+
+
+def check_fast_forward():
+    """
+    Enforces fast-forward only pushes
+    """
+
+    if oldrev != zero:  # ignore new branches
+        missed_refs = os.popen("git rev-list %s..%s" % (newrev, oldrev)).read()
+        missed_ref_count = len(missed_refs.split("\n"))
+        if missed_ref_count > 0:
+            usage("[POLICY] Non fast-forward updates are not allowed for this branch")
+
+
+def main():
+    check_deletion()
+    check_fast_forward()
+
+main()
