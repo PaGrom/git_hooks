@@ -1,3 +1,14 @@
+import re
+
+class GitError(Exception):
+
+    '''
+    Exception Git Error
+    '''
+
+    def __init__(self, msg):
+        self.msg = msg
+
 class Commit(object):
 
     '''
@@ -10,3 +21,6 @@ class Commit(object):
         'Description:' : re.compile(r'^.{72,}$'),
         'Signed-off-by:' : re.compile(r'^((\S+)(\s){1}){2}(\S+)@([a-z0-9-]+)(\.)([a-z]{2,4})+$'),
     }
+
+    def __init__(self, id):
+        self.id = id
