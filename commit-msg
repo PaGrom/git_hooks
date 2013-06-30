@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+import sys
+
+from rtgitlib import *
+
+def process(commit_msg_path):
+    """
+    Process the commit message.
+    """
+
+    # read in commit message
+    commit_msg_file = open(commit_msg_path, 'r')
+    commit_msg = commit_msg_file.read().split('\n')
+    # remove empty strings and comment lines
+    commit_msg = [x for x in commit_msg if x and x[0] != '#']
+    commit_msg_file.close()
+
+    # check to see if message is properly formatted
+    check_message(commit_msg)
+
+
+def check_message(message):
+    """
+    Check message
+    """
+
+    header_fields = Commit.rt_header_fields.keys()
+
+    if len(message) != len(header_fields):
+        raise GitError("Wrong commit message format")
+
+    errors = len(header_fields)
+
+    for header in header_fields:
+        for line in message:
+            if line.startswith(header):
+                errors -= 1
+                if not Commit.rt_header_fields[header].match(line[len(header):]):
+                    raise GitError("Wrong field %s" % header)
+
+    if errors:
+        raise GitError("Wrong commit message format")
+
+if __name__ == '__main__':
+
+    if len(sys.argv) > 1:
+        process(sys.argv[1])
+    else:
+        # Should never happen, but just in case...
+        raise GitError('Commit message was not received.')
