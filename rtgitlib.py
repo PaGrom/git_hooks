@@ -1,3 +1,4 @@
+import os
 from subprocess import *
 
 
@@ -8,6 +9,14 @@ class GitError(Exception):
 
     def __str__(self):
         return self.msg
+
+
+def running_as_hook():
+    """
+    Check for running as hook
+    """
+
+    return 'GIT_DIR' in os.environ
 
 
 def call(cmd, lcnt=1):

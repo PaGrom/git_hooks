@@ -2,11 +2,11 @@
 
 import os
 import sys
+from rtgitlib import *
 
-
-refname = sys.argv[1]
-oldrev = sys.argv[2]
-newrev = sys.argv[3]
+refname = None
+oldrev = None
+newrev = None
 zero = '0' * 40
 
 DEBUG_LEVEL = None
@@ -16,9 +16,9 @@ errors = []
 
 
 def check_errors():
-    '''
+    """
     Print error messages and exit with an error code
-    '''
+    """
 
     for error in errors:
         sys.stderr.write('%s\n' % str(error))
@@ -56,7 +56,18 @@ def check_fast_forward():
                 "[POLICY] Non fast-forward updates are not allowed for this branch")
 
 
-def main():
+def main(argv):
+
+    if not running_as_hook():
+        sys.stderr.write("[ERROR] Don't run this script from the command line.\n")
+        sys.exit(2)
+
+    global refname
+    global oldrev
+    global newrev
+
+    (refname, oldrev, newrev) = argv
+
     sys.stdout.write("Enforcing Policies... \n(%s) (%s) (%s)\n" %
                     (refname, oldrev[0:6], newrev[0:6]))
 
@@ -65,4 +76,8 @@ def main():
 
     check_errors()
 
-main()
+if __name__ == "__main__":
+    main(sys.argv[1:])
+else:
+    sys.stderr.write('[ERROR] __name__ != "__main__"')
+    sys.exit(2)
