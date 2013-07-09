@@ -41,6 +41,30 @@ def call(cmd, lcnt=1):
 
     return lines
 
+def make_pipeline(previous_output_pipe,*cmd_list):
+    """
+    Make pipeline and call terminal commands
+    """
+
+    proc_list = []
+    for cmd in cmd_list:
+        proc = Popen(
+            cmd, stdin=previous_output_pipe, stdout=PIPE, close_fds=True)
+        proc_list.append(proc)
+        previous_output_pipe = proc.stdout
+    lines = proc.stdout.readlines()
+    exitcode_list = []
+    for proc in proc_list:
+        exitcode = proc.wait()
+        exitcode_list.append(exitcode)
+    for (cmd, exitcode) in zip(cmd_list, exitcode_list):
+        if exitcode != 0:
+            raise GitError('"%s": returns exitcode %s' % (
+                ' '.join(cmd), exitcode))
+    lines = map(lambda l: l.rstrip(), lines)
+
+    return lines
+
 
 def get_config(key):
     """
