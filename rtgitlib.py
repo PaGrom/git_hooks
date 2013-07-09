@@ -108,3 +108,11 @@ def list_created_revs(rev):
     filter = lambda line: re.match('^([0-9a-f]+) (.*)$', line).groups()
 
     return map(filter, make_pipeline(None, cmd1, cmd2, cmd3))
+
+
+def list_added_revs(rev):
+    cmd1 = ["git", "rev-list", "--reverse",
+        "--pretty=oneline", rev.old + ".." + rev.new]
+    filter = lambda line: re.match('^([0-9a-f]+) (.*)$', line).groups()
+
+    return map(filter, make_pipeline(None, cmd1))
