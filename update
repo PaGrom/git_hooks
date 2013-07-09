@@ -3,24 +3,35 @@
 import os
 import sys
 
-refname = sys.argv[0]
-oldrev = sys.argv[1]
-newrev = sys.argv[2]
-zero = "0000000000000000000000000000000000000000"
 
-sys.stdout.write("Enforcing Policies... \n(%s) (%s) (%s)\n" %
-                 (refname, oldrev[0:6], newrev[0:6]))
+refname = sys.argv[1]
+oldrev = sys.argv[2]
+newrev = sys.argv[3]
+zero = '0' * 40
+
+DEBUG_LEVEL = None
+GATEKEEPERS_GROUP = None
+
+errors = []
 
 
-def usage(msg=None):
+def check_errors():
     '''
-    Print a usage message and exit with an error code
+    Print error messages and exit with an error code
     '''
 
-    if msg:
-        sys.stderr.write('%s\n' % str(msg))
+    for error in errors:
+        sys.stderr.write('%s\n' % str(error))
 
     sys.exit(1)
+
+
+def add_error(msg):
+    """
+    Add error message to errors list
+    """
+
+    errors.append(msg)
 
 
 def check_deletion():
@@ -29,7 +40,7 @@ def check_deletion():
     """
 
     if newrev == zero:
-        usage("[POLICY] Refusing to delete this branch")
+        add_error("[POLICY] Refusing to delete this branch")
 
 
 def check_fast_forward():
@@ -41,11 +52,17 @@ def check_fast_forward():
         missed_refs = os.popen("git rev-list %s..%s" % (newrev, oldrev)).read()
         missed_ref_count = len(missed_refs.split("\n"))
         if missed_ref_count > 0:
-            usage("[POLICY] Non fast-forward updates are not allowed for this branch")
+            add_error(
+                "[POLICY] Non fast-forward updates are not allowed for this branch")
 
 
 def main():
+    sys.stdout.write("Enforcing Policies... \n(%s) (%s) (%s)\n" %
+                    (refname, oldrev[0:6], newrev[0:6]))
+
     check_deletion()
     check_fast_forward()
+
+    check_errors()
 
 main()
