@@ -69,17 +69,29 @@ def check_fast_forward():
                 "[POLICY] Non fast-forward updates are not allowed for this branch")
 
 
-def main(argv):
-
-    if not running_as_hook():
-        ERROR("Don't run this script from the command line.\n")
-        sys.exit(2)
+def set_global_constants(argv):
+    """
+    Initialize several global contants used by this program
+    """
 
     global refname
     global oldrev
     global newrev
 
     (refname, oldrev, newrev) = argv
+
+    DEBUG('refname: ', refname)
+    DEBUG('oldrev: ', oldrev)
+    DEBUG('newrev: ', newrev)
+
+
+def main(argv):
+
+    if not running_as_hook():
+        ERROR("Don't run this script from the command line.\n")
+        sys.exit(2)
+
+    set_global_constants(argv)
 
     sys.stdout.write("Enforcing Policies... \n(%s) (%s) (%s)\n" %
                     (refname, oldrev[0:6], newrev[0:6]))
