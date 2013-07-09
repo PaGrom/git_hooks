@@ -85,7 +85,8 @@ def check_errors():
     for error in errors:
         ERROR('%s\n' % str(error))
 
-    sys.exit(1)
+    if len(errors) != 0:
+        sys.exit(1)
 
 
 def add_error(msg):
@@ -123,7 +124,7 @@ def check_commit_msg():
     rev = Rev_Struct(refname, oldrev, newrev)
 
     DEBUG('Receiving commit from %s' % get_user_name())
-    DEBUG(rev.refname)
+
     if re.match(r'refs/heads/[^/]+$', rev.refname):
         DEBUG('1111')
         if rev.change_t == 'create':
@@ -133,6 +134,35 @@ def check_commit_msg():
 
         for (commitish, title) in revs:
             DEBUG("processing %s  %s" % (commitish, title))
+            parse_commit_header(commitish)
+    else:
+        add_error('Unknown refname %s' % rev.refname)
+
+
+def parse_commit_header(commitish):
+    """
+    Parse commit message and check format
+    """
+
+    hdr = CommitSubHeader()
+    line_list = dump_header_body(commitish)
+    while len(line_list) != 0:
+        line = line_list.pop(0)
+
+        if match_or_die_if_multiply_defined(line, 'REF: ', hdr.ref):
+            hdr.ref = 1  # Not None
+            if not Commit.rt_header_fields['REF: '].match(line[len('REF: '):]):
+                add_error("Wrong field 'REF:'")
+
+        elif match_or_die_if_multiply_defined(line, 'REF: ', hdr.signed):
+            hdr.ref = 1  # Not None
+            if not Commit.rt_header_fields['Signed-off-by: '].match(line[len('Signed-off-by: '):]):
+                add_error("Wrong field 'Signed-off-by:'")
+
+    if hdr.ref == None:
+        add_error("No field 'REF:'")
+    if hdr.signed == None:
+        add_error("No field 'Signed-off-by:'")
 
 
 def set_global_constants(argv):
