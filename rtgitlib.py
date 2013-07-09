@@ -1,4 +1,5 @@
 import os
+import sys
 from subprocess import *
 
 
@@ -29,7 +30,8 @@ def call(cmd, lcnt=1):
     exitcode = proc.wait()
 
     if exitcode != 0:
-        raise GitError('"%s": returns exitcode %s. ' % (' '.join(cmd), exitcode))
+        raise GitError('"%s": returns exitcode %s. ' % (
+            ' '.join(cmd), exitcode))
 
     lines = map(lambda l: l.rstrip(), lines)
     if lcnt != None and len(lines) != lcnt:

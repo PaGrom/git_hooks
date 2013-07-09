@@ -4,15 +4,63 @@ import os
 import sys
 from rtgitlib import *
 
-refname = None
-oldrev = None
-newrev = None
+
 zero = '0' * 40
 
-DEBUG_LEVEL = None
 GATEKEEPERS_GROUP = None
 
 errors = []
+
+
+class Rev_Struct:
+
+    def __init__(self, refname, old_rev, new_rev):
+        DEBUG('refname=%s' % refname)
+        DEBUG('old_rev=%s' % old_rev)
+        DEBUG('new_rev=%s' % new_rev)
+
+        self.refname = refname
+        self.old = old_rev
+        self.new = new_rev
+        # 0000 -> 1234 (create)
+        # 1234 -> 2345 (update)
+        # 2345 -> 0000 (delete)
+        new_rev_is_void = re.match("^0+$", new_rev)
+        old_rev_is_void = re.match("^0+$", old_rev)
+        if new_rev_is_void and old_rev_is_void:
+            ERROR("this program didn't anticipate both rev's being all zero")
+            sys.exit(2)
+        elif old_rev_is_void:
+            self.new_t = get_rev_type(self.new)
+            self.old_t = "n/a"
+            self.curr = self.new
+            self.curr_t = self.new_t
+            self.change_t = "create"
+        elif new_rev_is_void:
+            self.new_t = "n/a"
+            self.old_t = get_rev_type(self.old)
+            self.curr = self.old
+            self.curr_t = self.old_t
+            self.change_t = "delete"
+        else:
+            self.new_t = get_rev_type(self.new)
+            self.old_t = get_rev_type(self.old)
+            self.curr = self.new
+            self.curr_t = self.new_t
+            self.change_t = "update"
+        if string.find(self.refname, 'refs/tags/') == 0:
+            self.kind = "tag"
+        elif string.find(self.refname, 'refs/heads/') == 0:
+            self.kind = "branch"
+        else:
+            ERROR("this program didn't anticipate pushing to", self.refname)
+            sys.exit(2)
+        DEBUG('new_rev_t=', self.new_t)
+        DEBUG('old_rev_t=', self.old_t)
+        DEBUG('change_t=', self.change_t)
+        DEBUG('curr_rev=', self.curr)
+        DEBUG('curr_rev_t=', self.curr_t)
+        DEBUG('kind=', self.kind)
 
 
 def DEBUG(*msg):
@@ -44,6 +92,7 @@ def add_error(msg):
     Add error message to errors list
     """
 
+    global errors
     errors.append(msg)
 
 
@@ -69,10 +118,22 @@ def check_fast_forward():
                 "[POLICY] Non fast-forward updates are not allowed for this branch")
 
 
+def do_ref(rev):
+    pass
+
+
 def set_global_constants(argv):
     """
     Initialize several global contants used by this program
     """
+
+    global DEBUG_LEVEL
+
+    try:
+        DEBUG_LEVEL = get_config('rtsoft.debug')
+    except GitError as msg:
+        ERROR(str(msg), "Maybe its not defined.")
+        sys.exit(1)
 
     global refname
     global oldrev
@@ -84,16 +145,8 @@ def set_global_constants(argv):
     DEBUG('oldrev: ', oldrev)
     DEBUG('newrev: ', newrev)
 
-    global DEBUG_LEVEL
-
-    try:
-        DEBUG_LEVEL = get_config('rtsoft.debug')
-    except GitError as msg:
-        ERROR(str(msg), "Maybe its not defined.")
-
 
 def main(argv):
-
     if not running_as_hook():
         ERROR("Don't run this script from the command line.\n")
         sys.exit(2)
