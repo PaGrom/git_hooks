@@ -61,9 +61,26 @@ def get_rev_type(rev):
 
     return call(cmd)[0]
 
+
 def get_user_name():
     """
     Get user name
     """
-    
+
     return pwd.getpwuid(os.getuid())[0]
+
+
+def list_created_revs(rev):
+    """
+    This shows all log entries that are not already covered
+    by another ref - i.e. commits that are now accessible
+    from this ref that were previously not accessible
+    """
+
+    cmd1 = ["git", "rev-parse", "--not", "--branches"]
+    cmd2 = ["grep", "-v", rev.new]
+    cmd3 = ["git", "rev-list", "--reverse",
+            "--pretty=oneline", "--stdin", rev.new]
+    filter = lambda line: re.match('^([0-9a-f]+) (.*)$', line).groups()
+
+    return map(filter, make_pipeline(None, cmd1, cmd2, cmd3))
