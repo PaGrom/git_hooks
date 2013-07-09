@@ -2,6 +2,7 @@
 
 import os
 import sys
+import re
 from rtgitlib import *
 
 
@@ -48,9 +49,9 @@ class Rev_Struct:
             self.curr = self.new
             self.curr_t = self.new_t
             self.change_t = "update"
-        if string.find(self.refname, 'refs/tags/') == 0:
+        if self.refname.find('refs/tags/') == 0:
             self.kind = "tag"
-        elif string.find(self.refname, 'refs/heads/') == 0:
+        elif self.refname.find('refs/heads/') == 0:
             self.kind = "branch"
         else:
             ERROR("this program didn't anticipate pushing to", self.refname)
@@ -118,8 +119,20 @@ def check_fast_forward():
                 "[POLICY] Non fast-forward updates are not allowed for this branch")
 
 
-def do_ref(rev):
-    pass
+def check_commit_msg():
+    rev = Rev_Struct(refname, oldrev, newrev)
+
+    DEBUG('Receiving commit from %s' % get_user_name())
+    DEBUG(rev.refname)
+    if re.match(r'refs/heads/[^/]+$', rev.refname):
+        DEBUG('1111')
+        if rev.change_t == 'create':
+            revs = list_created_revs(rev)
+        else:
+            revs = list_added_revs(rev)
+
+        for (commitish, title) in revs:
+            DEBUG("processing %s  %s" % (commitish, title))
 
 
 def set_global_constants(argv):
@@ -141,10 +154,6 @@ def set_global_constants(argv):
 
     (refname, oldrev, newrev) = argv
 
-    DEBUG('refname: ', refname)
-    DEBUG('oldrev: ', oldrev)
-    DEBUG('newrev: ', newrev)
-
 
 def main(argv):
     if not running_as_hook():
@@ -153,11 +162,12 @@ def main(argv):
 
     set_global_constants(argv)
 
-    sys.stdout.write("Enforcing Policies... \n(%s) (%s) (%s)\n" %
-                    (refname, oldrev[0:6], newrev[0:6]))
+    INFO("Enforcing Policies... \n(%s) (%s) (%s)\n" %
+        (refname, oldrev[0:6], newrev[0:6]))
 
     check_deletion()
     check_fast_forward()
+    check_commit_msg()
 
     check_errors()
 
