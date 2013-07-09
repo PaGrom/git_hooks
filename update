@@ -84,6 +84,13 @@ def set_global_constants(argv):
     DEBUG('oldrev: ', oldrev)
     DEBUG('newrev: ', newrev)
 
+    global DEBUG_LEVEL
+
+    try:
+        DEBUG_LEVEL = get_config('rtsoft.debug')
+    except GitError as msg:
+        ERROR(str(msg), "Maybe its not defined.")
+
 
 def main(argv):
 
@@ -100,6 +107,7 @@ def main(argv):
     check_fast_forward()
 
     check_errors()
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
