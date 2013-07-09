@@ -49,3 +49,13 @@ def get_config(key):
     cmd = ['git', 'config', key]
 
     return call(cmd)[0]
+
+
+def get_rev_type(rev):
+    """
+    Get rev type: git cat-file -t rev_name
+    """
+
+    cmd = ['git', 'cat-file', '-t', rev]
+
+    return call(cmd)[0]
