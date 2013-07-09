@@ -1,6 +1,7 @@
 import os
 import sys
-import pwd, re
+import pwd
+import re
 from subprocess import *
 
 
@@ -11,6 +12,28 @@ class GitError(Exception):
 
     def __str__(self):
         return self.msg
+
+
+class Commit:
+
+    """
+    Represents an individual git commit
+    """
+
+    rt_header_fields = {
+        'REF: ': re.compile(r'^#[\d]{2,4}$'),
+        'Signed-off-by: ': re.compile(r'^((\S+)(\s){1}){2}(<\S+)@dev.rtsoft.ru+>$'),
+    }
+
+    def __init__(self):
+        pass
+
+
+class CommitSubHeader:
+
+    def __init__(self):
+        self.ref = None
+        self.signed = None
 
 
 def running_as_hook():
@@ -116,3 +139,25 @@ def list_added_revs(rev):
     filter = lambda line: re.match('^([0-9a-f]+) (.*)$', line).groups()
 
     return map(filter, make_pipeline(None, cmd1))
+
+
+def dump_header_body(rev):
+    """
+    git-log -n 1 --pretty=format:%b "$rev" |
+    """
+
+    cmd1 = ["git", "log", "-n", "1", "--pretty=format:%b", rev]
+
+    return make_pipeline(None, cmd1)
+
+
+def match_or_die_if_multiply_defined(line, prefix, var):
+    if line.find(prefix) == 0:
+        if var != None:
+            ERROR("*** multiple '", prefix, ": *' lines")
+            ERROR("*** previous value was", var)
+            ERROR("*** current line is ", line)
+            sys.exit(2)
+        return True
+    else:
+        return False
