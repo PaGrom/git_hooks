@@ -1,5 +1,6 @@
 import os
 import sys
+import pwd
 from subprocess import *
 
 
@@ -59,3 +60,10 @@ def get_rev_type(rev):
     cmd = ['git', 'cat-file', '-t', rev]
 
     return call(cmd)[0]
+
+def get_user_name():
+    """
+    Get user name
+    """
+    
+    return pwd.getpwuid(os.getuid())[0]
