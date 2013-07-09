@@ -1,29 +1,40 @@
-import re
-import sys
+from subprocess import *
+
 
 class GitError(Exception):
 
-    '''
-    Exception Git Error
-    '''
-
     def __init__(self, msg):
         self.msg = msg
-        sys.stderr.write('%s\n' % str(msg))
+
+    def __str__(self):
+        return self.msg
 
 
-class Commit(object):
+def call(cmd, lcnt=1):
+    """
+    Call terminal command and return output lines
+    """
 
-    '''
-    Represents an individual git commit
-    '''
+    proc = Popen(cmd, stdout=PIPE, close_fds=True)
+    lines = proc.stdout.readlines()
+    exitcode = proc.wait()
 
-    rt_header_fields = {
-        '<prefix>: ' : re.compile(r'^[\s\S]{0,72}$'),
-        'REF: ' : re.compile(r'^#[\d]{4}$'),
-        'Description: ' : re.compile(r'^.{72,}$'),
-        'Signed-off-by: ' : re.compile(r'^((\S+)(\s){1}){2}(<\S+)@([a-z0-9-]+)(\.)([a-z]{2,4})+>$'),
-    }
+    if exitcode != 0:
+        raise GitError('"%s": returns exitcode %s' % (' '.join(cmd), exitcode))
 
-    def __init__(self, id):
-        self.id = id
+    lines = map(lambda l: l.rstrip(), lines)
+    if lcnt != None and len(lines) != lcnt:
+        raise GitError("\"%s\": couldn't retrieve exactly %s value(s)" % (
+            ' '.join(cmd), lcnt))
+
+    return lines
+
+
+def get_config(key):
+    """
+    Get git config
+    """
+
+    cmd = ['git', 'config', key]
+
+    return call(cmd)[0]
