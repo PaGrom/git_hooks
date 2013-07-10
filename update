@@ -8,7 +8,7 @@ from rtgitlib import *
 
 zero = '0' * 40
 
-GATEKEEPERS_GROUP = None
+GATEKEEPERS_GROUP = []
 
 errors = []
 
@@ -126,6 +126,10 @@ def check_commit_msg():
     DEBUG('Receiving commit from %s (%s)' % (user.name, user.real_name))
 
     if re.match(r'refs/heads/[^/]+$', rev.refname):
+        if not gatekeeper():
+            add_error("Pushing branch %s requires gatekeeper permissions\n"
+                      % rev.refname)
+
         if rev.change_t == 'create':
             revs = list_created_revs(rev)
         else:
@@ -136,6 +140,18 @@ def check_commit_msg():
             parse_commit_header(commitish)
     else:
         add_error('Unknown refname %s' % rev.refname)
+
+
+def gatekeeper():
+    """
+    Check user is gatekeeper
+    """
+
+    for group in user.groups:
+        if group in GATEKEEPERS_GROUP:
+            return True
+
+    return False
 
 
 def parse_commit_header(commitish):
@@ -173,6 +189,14 @@ def set_global_constants(argv):
 
     try:
         DEBUG_LEVEL = get_config('rtsoft.debug')
+    except GitError as msg:
+        ERROR(str(msg), "Maybe its not defined.")
+        sys.exit(1)
+
+    global GATEKEEPERS_GROUP
+
+    try:
+        GATEKEEPERS_GROUP = get_config('rtsoft.gatekeepers-group')
     except GitError as msg:
         ERROR(str(msg), "Maybe its not defined.")
         sys.exit(1)
