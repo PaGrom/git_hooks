@@ -169,8 +169,8 @@ def parse_commit_header(commitish):
             if not Commit.rt_header_fields['REF: '].match(line[len('REF: '):]):
                 add_error("Wrong field 'REF:' in %s" % commitish)
 
-        elif match_or_die_if_multiply_defined(line, 'REF: ', hdr.signed):
-            hdr.ref = 1  # Not None
+        elif match_or_die_if_multiply_defined(line, 'Signed-off-by: ', hdr.signed):
+            hdr.signed = 1  # Not None
             if not Commit.rt_header_fields['Signed-off-by: '].match(line[len('Signed-off-by: '):]):
                 add_error("Wrong field 'Signed-off-by:' in %s" % commitish)
 
