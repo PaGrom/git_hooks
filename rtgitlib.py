@@ -2,6 +2,8 @@ import os
 import sys
 import pwd
 import re
+import pwd
+import grp
 from subprocess import *
 
 
@@ -34,6 +36,35 @@ class CommitSubHeader:
     def __init__(self):
         self.ref = None
         self.signed = None
+
+
+class User(object):
+
+    '''
+    Contains information about the user running the current program
+
+    Each instance contains the following attributes containing information
+    about the user who is running the current program
+
+        .name   Login name of the current user
+        .groups Groups that the current user is a member of
+    '''
+
+    def __init__(self):
+        pwent = pwd.getpwuid(os.getuid())
+        self.name = pwent.pw_name
+        self.real_name = pwent.pw_gecos.split(',', 2)[0]
+        gids = os.getgroups()
+        gid = os.getgid()
+        if gid not in gids:
+            gids.append(gid)
+        self.groups = []
+        for gid in gids:
+            try:
+                self.groups.append(grp.getgrgid(gid).gr_name)
+            except:
+                sys.stdout.write(
+                    "Can't find name for gid %d.  (This can usually be safely ignored.)\n" % gid)
 
 
 def running_as_hook():
@@ -107,14 +138,6 @@ def get_rev_type(rev):
     cmd = ['git', 'cat-file', '-t', rev]
 
     return call(cmd)[0]
-
-
-def get_user_name():
-    """
-    Get user name
-    """
-
-    return pwd.getpwuid(os.getuid())[0]
 
 
 def list_created_revs(rev):
