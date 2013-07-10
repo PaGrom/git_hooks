@@ -112,6 +112,8 @@ def make_pipeline(previous_output_pipe,*cmd_list):
         exitcode = proc.wait()
         exitcode_list.append(exitcode)
     for (cmd, exitcode) in zip(cmd_list, exitcode_list):
+        if 'grep' in cmd:
+            continue
         if exitcode != 0:
             raise GitError('"%s": returns exitcode %s' % (
                 ' '.join(cmd), exitcode))
