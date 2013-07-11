@@ -113,8 +113,9 @@ def check_fast_forward():
     """
 
     if oldrev != zero:  # ignore new branches
-        missed_refs = os.popen("git rev-list %s..%s" % (newrev, oldrev)).read()
-        missed_ref_count = len(missed_refs.split("\n"))
+        cmd = ['git', 'rev-list', newrev + '..' + oldrev]
+        missed_refs = call(cmd)
+        missed_ref_count = len(missed_refs)
         if missed_ref_count > 0:
             add_error(
                 "[POLICY] Non fast-forward updates are not allowed for this branch")
