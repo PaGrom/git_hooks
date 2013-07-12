@@ -8,7 +8,7 @@ from rtgitlib import *
 
 zero = '0' * 40
 
-GATEKEEPERS_GROUP = []
+GATEKEEPERS = []
 
 errors = []
 
@@ -148,9 +148,8 @@ def gatekeeper():
     Check user is gatekeeper
     """
 
-    for group in user.groups:
-        if group in GATEKEEPERS_GROUP:
-            return True
+    if user.name in GATEKEEPERS:
+        return True
 
     return False
 
@@ -194,10 +193,10 @@ def set_global_constants(argv):
         ERROR(str(msg), "Maybe its not defined.")
         sys.exit(1)
 
-    global GATEKEEPERS_GROUP
+    global GATEKEEPERS
 
     try:
-        GATEKEEPERS_GROUP = get_config('rtsoft.gatekeepers-group')
+        GATEKEEPERS = get_config('rtsoft.gatekeepers')
     except GitError as msg:
         ERROR(str(msg), "Maybe its not defined.")
         sys.exit(1)
