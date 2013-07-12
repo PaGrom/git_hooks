@@ -8,7 +8,10 @@ from rtgitlib import *
 
 zero = '0' * 40
 
+DEBUG_LEVEL = '1'
+
 GATEKEEPERS = []
+GATEKEEPERS_ENABLE = False
 
 errors = []
 
@@ -127,7 +130,7 @@ def check_commit_msg():
     DEBUG('Receiving commit from %s (%s)' % (user.name, user.real_name))
 
     if re.match(r'refs/heads/[^/]+$', rev.refname):
-        if not gatekeeper():
+        if GATEKEEPERS_ENABLE and not gatekeeper():
             add_error("Pushing branch %s requires gatekeeper permissions\n"
                       % rev.refname)
 
@@ -190,16 +193,16 @@ def set_global_constants(argv):
     try:
         DEBUG_LEVEL = get_config('rtsoft.debug')
     except GitError as msg:
-        ERROR(str(msg), "Maybe its not defined.")
-        sys.exit(1)
+        pass
 
     global GATEKEEPERS
+    global GATEKEEPERS_ENABLE
 
     try:
         GATEKEEPERS = get_config('rtsoft.gatekeepers')
+        GATEKEEPERS_ENABLE = True
     except GitError as msg:
-        ERROR(str(msg), "Maybe its not defined.")
-        sys.exit(1)
+        pass
 
     global refname
     global oldrev
