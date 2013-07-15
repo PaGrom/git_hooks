@@ -107,7 +107,8 @@ def check_deletion():
     """
 
     if newrev == zero:
-        add_error("[POLICY] Refusing to delete this branch")
+        ERROR("[POLICY] Refusing to delete this branch")
+        sys.exit(1)
 
 
 def check_fast_forward():
@@ -142,11 +143,6 @@ def pre_receive():
         for (commitish, title) in revs:
             DEBUG("processing %s  %s" % (commitish, title))
             check_commit_msg(commitish)
-
-    elif rev.refname.startswith('refs/tags/'):
-        tag = Tag(rev.refname, ref.old, ref.new)
-        if not tag.id:
-            add_error('Tag deletion is not allowed: %s\n' % tag.name)
 
     else:
         add_error('Unknown refname %s' % rev.refname)

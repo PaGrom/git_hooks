@@ -67,28 +67,6 @@ class User(object):
                     "Can't find name for gid %d.  (This can usually be safely ignored.)\n" % gid)
 
 
-class Tag:
-
-    """
-    Represents a pushed git tag reference
-    """
-
-    zero_id = '0' * 40
-
-    def __init__(self, name, id=None, new_id=None):
-        if not id and not new_id:
-            cmd = ['git', 'rev-parse', name]
-            try:
-                id = call(cmd)
-            except:
-                id = None
-        elif id == self.zero_id:
-            id = None
-
-        self.id = id
-        self.name = name
-
-
 def running_as_hook():
     """
     Check for running as hook
