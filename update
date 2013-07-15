@@ -130,22 +130,30 @@ def pre_receive():
 
     DEBUG('Receiving commit from %s (%s)' % (user.name, user.real_name))
 
-    if re.match(r'refs/heads/[^/]+$', rev.refname):
+    if re.match(r'refs/heads/master$', rev.refname):
         if GATEKEEPERS_ENABLE and not gatekeeper():
             add_error("Pushing branch %s requires gatekeeper permissions\n"
                       % rev.refname)
 
-        if rev.change_t == 'create':
-            revs = list_created_revs(rev)
-        else:
-            revs = list_added_revs(rev)
-
-        for (commitish, title) in revs:
-            DEBUG("processing %s  %s" % (commitish, title))
-            check_commit_msg(commitish)
+    elif re.match(r'^refs/heads/.+$', rev.refname):
+        if GATEKEEPERS_ENABLE and not gatekeeper():
+            if not re.match('^refs/heads/bugfixes/#([\d]){2,6}_([\d]){2}$', rev.refname):
+                add_error("""Creating branch %s requires gatekeeper permissions.
+                           You have to create branch with name format:
+                           'refs/heads/bugfixes/#<bug_num>_<branch_version>'\n"""
+                          % rev.refname)
 
     else:
         add_error('Unknown refname %s' % rev.refname)
+
+    if rev.change_t == 'create':
+        revs = list_created_revs(rev)
+    else:
+        revs = list_added_revs(rev)
+
+    for (commitish, title) in revs:
+        DEBUG("processing %s  %s" % (commitish, title))
+        check_commit_msg(commitish)
 
 
 def gatekeeper():
