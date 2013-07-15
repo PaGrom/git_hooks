@@ -103,11 +103,11 @@ def add_error(*msg):
 
 def check_deletion():
     """
-    Denies deletion of a branch
+    Denies deletion of a ref
     """
 
     if newrev == zero:
-        ERROR("[POLICY] Refusing to delete this branch")
+        ERROR("[POLICY] Refusing to delete this ref")
         sys.exit(1)
 
 
