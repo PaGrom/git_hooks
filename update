@@ -124,7 +124,7 @@ def check_fast_forward():
                 "[POLICY] Non fast-forward updates are not allowed for this branch")
 
 
-def check_commit_msg():
+def pre_receive():
     rev = Rev_Struct(refname, oldrev, newrev)
 
     DEBUG('Receiving commit from %s (%s)' % (user.name, user.real_name))
@@ -141,7 +141,13 @@ def check_commit_msg():
 
         for (commitish, title) in revs:
             DEBUG("processing %s  %s" % (commitish, title))
-            parse_commit_header(commitish)
+            check_commit_msg(commitish)
+
+    elif rev.refname.startswith('refs/tags/'):
+        tag = Tag(rev.refname, ref.old, ref.new)
+        if not tag.id:
+            add_error('Tag deletion is not allowed: %s\n' % tag.name)
+
     else:
         add_error('Unknown refname %s' % rev.refname)
 
@@ -157,7 +163,7 @@ def gatekeeper():
     return False
 
 
-def parse_commit_header(commitish):
+def check_commit_msg(commitish):
     """
     Parse commit message and check format
     """
@@ -227,7 +233,7 @@ def main(argv):
 
     check_deletion()
     check_fast_forward()
-    check_commit_msg()
+    pre_receive()
 
     check_errors()
 
