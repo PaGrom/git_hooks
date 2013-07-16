@@ -137,11 +137,13 @@ def pre_receive():
 
     elif re.match(r'^refs/heads/.+$', rev.refname):
         if GATEKEEPERS_ENABLE and not gatekeeper():
-            if not re.match('^refs/heads/bugfixes/#([\d]){2,6}_([\d]){2}$', rev.refname):
+            if not re.match('^refs/heads/bugfixes/([\d]){1,6}_.+$', rev.refname):
                 add_error("""Creating branch %s requires gatekeeper permissions.
                            You have to create branch with name format:
                            'refs/heads/bugfixes/#<bug_num>_<branch_version>'\n"""
                           % rev.refname)
+            if len(rev.refname) > 72:
+                add_error("Branch name must be less then 72 char")
 
     else:
         add_error('Unknown refname %s' % rev.refname)
