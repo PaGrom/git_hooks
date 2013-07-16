@@ -13,6 +13,8 @@ DEBUG_LEVEL = '1'
 GATEKEEPERS = []
 GATEKEEPERS_ENABLE = False
 
+BRANCH_NAME_CHECK = 1
+
 errors = []
 
 
@@ -136,7 +138,7 @@ def pre_receive():
                       % rev.refname)
 
     elif re.match(r'^refs/heads/.+$', rev.refname):
-        if GATEKEEPERS_ENABLE and not gatekeeper():
+        if BRANCH_NAME_CHECK and GATEKEEPERS_ENABLE and not gatekeeper():
             if not re.match('^refs/heads/bugfixes/([\d]){1,6}_.+$', rev.refname):
                 add_error("""Creating branch %s requires gatekeeper permissions.
                            You have to create branch with name format:
@@ -213,6 +215,13 @@ def set_global_constants(argv):
     try:
         GATEKEEPERS = get_config('rtsoft.gatekeepers')
         GATEKEEPERS_ENABLE = True
+    except GitError as msg:
+        pass
+
+    global BRANCH_NAME_CHECK
+
+    try:
+        BRANCH_NAME_CHECK = int(get_config('rtsoft.branch_name_check'))
     except GitError as msg:
         pass
 
