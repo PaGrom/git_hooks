@@ -233,7 +233,7 @@ def set_global_constants(argv):
     global BRANCH_NAME_CHECK
 
     try:
-        BRANCH_NAME_CHECK = int(get_config('rtsoft.branch_name_check'))
+        BRANCH_NAME_CHECK = int(get_config('rtsoft.branch-name-check'))
     except GitError as msg:
         pass
 
@@ -242,10 +242,7 @@ def set_global_constants(argv):
     try:
         MASTER_BRANCHES = get_config('rtsoft.master-branches').split(' ')
     except GitError as msg:
-        ERROR("Can't read rtsoft.branch_name_check. Maybe it is not define")
-
-    print ('GATEKEEPERS: ', GATEKEEPERS, type(GATEKEEPERS))
-    print ('MASTER_BRANCHES: ', MASTER_BRANCHES)
+        ERROR("Can't read rtsoft.master-branches. Maybe it is not define")
 
     global refname
     global oldrev
