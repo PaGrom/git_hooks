@@ -146,8 +146,12 @@ def pre_receive():
                            You have to create branch with name format:
                            'refs/heads/bugfixes/#<bug_num>_<branch_version>'\n"""
                           % rev.refname)
-            if len(rev.refname) > 72:
-                add_error("Branch name must be less then 72 char")
+
+        if len(rev.refname) > 72:
+            add_error("Branch name must be less then 72 char")
+
+        if rev.refname.startswith('refs/heads/origin/'):
+            add_error("Branch name can't start with 'origin/'")
 
     else:
         add_error('Unknown refname %s' % rev.refname)
