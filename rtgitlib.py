@@ -75,12 +75,12 @@ def running_as_hook():
     return 'GIT_DIR' in os.environ
 
 
-def call(cmd, lcnt=1):
+def call(cmd, lcnt=None, shl=False):
     """
     Call terminal command and return output lines
     """
 
-    proc = Popen(cmd, stdout=PIPE, close_fds=True)
+    proc = Popen(cmd, stdout=PIPE, close_fds=True, shell=shl)
     lines = proc.stdout.readlines()
     exitcode = proc.wait()
 

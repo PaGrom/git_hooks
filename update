@@ -17,6 +17,10 @@ BRANCH_NAME_CHECK = 1
 
 MASTER_BRANCHES = []
 
+RECIPIENTS = []
+
+EMAIL_MESSAGES = []
+
 errors = []
 
 
@@ -161,9 +165,23 @@ def pre_receive():
     else:
         revs = list_added_revs(rev)
 
+    global RECIPIENTS
+
+    try:
+        RECIPIENTS = get_config('branch.%s.recipients' %
+                                rev.refname[len('refs/heads/'):]).split(' ')
+    except GitError as msg:
+        DEBUG("%s" % msg)
+
+    RECIPIENTS = [x + '@dev.rtsoft.ru ' for x in RECIPIENTS]
+
     for (commitish, title) in revs:
         DEBUG("processing %s  %s" % (commitish, title))
-        check_commit_msg(commitish)
+        hdr = check_commit_msg(commitish)
+        if RECIPIENTS:
+            global EMAIL_MESSAGES
+            message = gen_mail(RECIPIENTS, rev, hdr, commitish, title)
+            EMAIL_MESSAGES.append(message)
 
 
 def gatekeeper():
@@ -175,6 +193,7 @@ def gatekeeper():
         return True
 
     return False
+
 
 def master_branch(branch_name):
     """
@@ -201,16 +220,68 @@ def check_commit_msg(commitish):
             hdr.ref = 1  # Not None
             if not Commit.rt_header_fields['REF: '].match(line[len('REF: '):]):
                 add_error("Wrong field 'REF:' in %s" % commitish)
+            else:
+                hdr.ref = line[len('REF: '):]
 
         elif match_or_die_if_multiply_defined(line, 'Signed-off-by: ', hdr.signed):
             hdr.signed = 1  # Not None
             if not Commit.rt_header_fields['Signed-off-by: '].match(line[len('Signed-off-by: '):]):
                 add_error("Wrong field 'Signed-off-by:' in %s" % commitish)
+            else:
+                hdr.signed = line[len('Signed-off-by: '):]
 
     if hdr.ref == None:
         add_error("No field 'REF:' in %s" % commitish)
     if hdr.signed == None:
         add_error("No field 'Signed-off-by:' in %s" % commitish)
+
+    return hdr
+
+
+def gen_mail(recipients, rev, hdr, commitish, title):
+    """
+    Generate email message
+    """
+
+    def emitln(fd, *args):
+        return fd + ''.join(args) + '\n'
+
+    DEBUG("Begin gen email message")
+    committer = "git@dev.rtsoft.ru"
+    content_type = "text/plain"
+    subject = "[Bug %s]" % hdr.ref
+    DEBUG("  Subject: %s" % subject)
+    message = ''
+    message = emitln(message, "From: ", committer)
+    message = emitln(message, "To: ", *recipients)
+    message = emitln(message, "Subject: ", subject)
+    message = emitln(message, "Content-Type: ", content_type)
+    message = emitln(message)
+    message = emitln(message, "Refname: ", rev.refname)
+    message = emitln(message, "Reftype: ", rev.kind)
+    message = emitln(message, "Old_Rev: ", rev.old)
+    message = emitln(message, "New_Rev: ", rev.new)
+    message = emitln(message, 'Receiving commit from %s (%s)' %
+                     (user.name, user.real_name))
+    message = emitln(message)
+    message = emitln(message, "Commit title: ", title)
+    message = emitln(message, "Commit message: ")
+    line_list = dump_header_body(commitish)
+    for line in line_list:
+        message = emitln(message, line)
+
+    return message
+
+
+def send_emails():
+    """
+    Uses sendmail for send email
+    """
+
+    cmd = "sendmail -f git@dev.rtsoft.ru"
+    for msg in EMAIL_MESSAGES:
+        for rec in RECIPIENTS:
+            call("echo '%s' | %s %s" % (msg, cmd, rec), None, True)
 
 
 def set_global_constants(argv):
@@ -274,6 +345,8 @@ def main(argv):
     pre_receive()
 
     check_errors()
+
+    send_emails()
 
 
 if __name__ == "__main__":
