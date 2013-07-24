@@ -23,7 +23,7 @@ class Commit:
     """
 
     rt_header_fields = {
-        'REF: ': re.compile(r'^#[\d]{2,4}$'),
+        'REF: ': re.compile(r'^#[\d]{1,6}$'),
         'Signed-off-by: ': re.compile(r'^((\S+)(\s){1}){2}(<\S+)@dev.rtsoft.ru+>$'),
     }
 
