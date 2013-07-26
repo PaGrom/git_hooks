@@ -8,12 +8,14 @@ from rtgitlib import *
 
 zero = '0' * 40
 
-DEBUG_LEVEL = '1'
+DEBUG_LEVEL = False
 
 GATEKEEPERS = []
 GATEKEEPERS_ENABLE = False
 
-BRANCH_NAME_CHECK = 1
+COMMIT_MESSAGE_CHECK = False
+
+BRANCH_NAME_CHECK = False
 
 MASTER_BRANCHES = []
 
@@ -76,7 +78,7 @@ class Rev_Struct:
 
 
 def DEBUG(*msg):
-    if DEBUG_LEVEL != '0':
+    if DEBUG_LEVEL:
         print >>sys.stderr, "[DEBUG] ", ''.join(msg)
 
 
@@ -218,21 +220,21 @@ def check_commit_msg(commitish):
 
         if match_or_die_if_multiply_defined(line, 'REF: ', hdr.ref):
             hdr.ref = 1  # Not None
-            if not Commit.rt_header_fields['REF: '].match(line[len('REF: '):]):
+            if COMMIT_MESSAGE_CHECK and not Commit.rt_header_fields['REF: '].match(line[len('REF: '):]):
                 add_error("Wrong field 'REF:' in %s" % commitish)
             else:
                 hdr.ref = line[len('REF: '):]
 
         elif match_or_die_if_multiply_defined(line, 'Signed-off-by: ', hdr.signed):
             hdr.signed = 1  # Not None
-            if not Commit.rt_header_fields['Signed-off-by: '].match(line[len('Signed-off-by: '):]):
+            if COMMIT_MESSAGE_CHECK and not Commit.rt_header_fields['Signed-off-by: '].match(line[len('Signed-off-by: '):]):
                 add_error("Wrong field 'Signed-off-by:' in %s" % commitish)
             else:
                 hdr.signed = line[len('Signed-off-by: '):]
 
-    if hdr.ref == None:
+    if COMMIT_MESSAGE_CHECK and hdr.ref == None:
         add_error("No field 'REF:' in %s" % commitish)
-    if hdr.signed == None:
+    if COMMIT_MESSAGE_CHECK and hdr.signed == None:
         add_error("No field 'Signed-off-by:' in %s" % commitish)
 
     return hdr
@@ -249,7 +251,7 @@ def gen_mail(recipients, rev, hdr, commitish, title):
     DEBUG("Begin gen email message")
     committer = "git@dev.rtsoft.ru"
     content_type = "text/plain"
-    subject = "[Bug %s]" % hdr.ref
+    subject = "[Bug %s] %s" % (hdr.ref, title)
     DEBUG("  Subject: %s" % subject)
     message = ''
     message = emitln(message, "From: ", committer)
@@ -292,7 +294,8 @@ def set_global_constants(argv):
     global DEBUG_LEVEL
 
     try:
-        DEBUG_LEVEL = get_config('rtsoft.debug')
+        if get_config('rtsoft.debug') == '1':
+            DEBUG_LEVEL = True
     except GitError as msg:
         pass
 
@@ -305,10 +308,19 @@ def set_global_constants(argv):
     except GitError as msg:
         pass
 
+    global COMMIT_MESSAGE_CHECK
+
+    try:
+        if get_config('rtsoft.commit-message-check') == '1':
+            COMMIT_MESSAGE_CHECK = True
+    except GitError as msg:
+        pass
+
     global BRANCH_NAME_CHECK
 
     try:
-        BRANCH_NAME_CHECK = int(get_config('rtsoft.branch-name-check'))
+        if get_config('rtsoft.branch-name-check') == '1':
+            BRANCH_NAME_CHECK = True
     except GitError as msg:
         pass
 
@@ -317,7 +329,7 @@ def set_global_constants(argv):
     try:
         MASTER_BRANCHES = get_config('rtsoft.master-branches').split(' ')
     except GitError as msg:
-        ERROR("Can't read rtsoft.master-branches. Maybe it is not define")
+        DEBUG("Can't read rtsoft.master-branches. Maybe it is not define")
 
     global refname
     global oldrev
