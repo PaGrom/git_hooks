@@ -178,6 +178,10 @@ def pre_receive():
     RECIPIENTS = [x + '@dev.rtsoft.ru ' for x in RECIPIENTS]
 
     for (commitish, title) in revs:
+        if len(title) < 5 or len(title) > 78:
+            add_error("Wrong size of Summary field in %s" % commitish)
+        if "REF:" in title:
+            add_error("No empty line after Summary field in %s" % commitish)
         DEBUG("processing %s  %s" % (commitish, title))
         hdr = check_commit_msg(commitish)
         if RECIPIENTS:
@@ -215,6 +219,7 @@ def check_commit_msg(commitish):
 
     hdr = CommitSubHeader()
     line_list = dump_header_body(commitish)
+
     while len(line_list) != 0:
         line = line_list.pop(0)
 
