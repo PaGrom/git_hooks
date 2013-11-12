@@ -35,6 +35,7 @@ class CommitSubHeader:
 
     def __init__(self):
         self.ref = None
+        self.desc = None
         self.signed = None
 
 

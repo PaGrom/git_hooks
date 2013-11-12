@@ -178,9 +178,9 @@ def pre_receive():
     RECIPIENTS = [x + '@dev.rtsoft.ru ' for x in RECIPIENTS]
 
     for (commitish, title) in revs:
-        if len(title) < 5 or len(title) > 78:
+        if COMMIT_MESSAGE_CHECK and len(title) < 5 or len(title) > 78:
             add_error("Wrong size of Summary field in %s" % commitish)
-        if "REF:" in title:
+        if COMMIT_MESSAGE_CHECK and "REF:" in title:
             add_error("No empty line after Summary field in %s" % commitish)
         DEBUG("processing %s  %s" % (commitish, title))
         hdr = check_commit_msg(commitish)
@@ -237,8 +237,15 @@ def check_commit_msg(commitish):
             else:
                 hdr.signed = line[len('Signed-off-by: '):]
 
+        elif len(line) != 0:
+            hdr.desc = 1
+            if COMMIT_MESSAGE_CHECK and len(line) < 5 or len(line) >78:
+                add_error("Wrong field 'Description' in %s" % commitish)
+
     if COMMIT_MESSAGE_CHECK and hdr.ref == None:
         add_error("No field 'REF:' in %s" % commitish)
+    if COMMIT_MESSAGE_CHECK and hdr.desc == None:
+        add_error("No field 'Description' in %s" % commitish)
     if COMMIT_MESSAGE_CHECK and hdr.signed == None:
         add_error("No field 'Signed-off-by:' in %s" % commitish)
 
