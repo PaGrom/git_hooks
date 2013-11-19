@@ -177,13 +177,12 @@ def dump_header_body(rev):
     return make_pipeline(None, cmd1)
 
 
-def match_or_die_if_multiply_defined(line, prefix, var):
-    if line.find(prefix) == 0:
-        if var != None:
-            ERROR("*** multiple '", prefix, ": *' lines")
-            ERROR("*** previous value was", var)
-            ERROR("*** current line is ", line)
-            sys.exit(2)
-        return True
-    else:
-        return False
+def dump_raw_body(rev):
+    """
+    git-log -n 1 --pretty=format:%B "$rev" |
+    """
+
+    cmd1 = ["git", "log", "-n", "1", "--pretty=format:%B", rev]
+
+    return make_pipeline(None, cmd1)
+

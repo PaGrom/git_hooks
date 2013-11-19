@@ -178,10 +178,6 @@ def pre_receive():
     RECIPIENTS = [x + '@dev.rtsoft.ru ' for x in RECIPIENTS]
 
     for (commitish, title) in revs:
-        if COMMIT_MESSAGE_CHECK and len(title) < 5 or len(title) > 78:
-            add_error("Wrong size of Summary field in %s" % commitish)
-        if COMMIT_MESSAGE_CHECK and "REF:" in title:
-            add_error("No empty line after Summary field in %s" % commitish)
         DEBUG("processing %s  %s" % (commitish, title))
         hdr = check_commit_msg(commitish)
         if RECIPIENTS:
@@ -218,20 +214,39 @@ def check_commit_msg(commitish):
     """
 
     hdr = CommitSubHeader()
-    line_list = dump_header_body(commitish)
+    line_list = dump_raw_body(commitish)
+
+    if COMMIT_MESSAGE_CHECK and line_list[1] != "":
+        if line_list[1].find('REF: ') == -1:
+            add_error("Summary field must have just one line in %s" % commitish)
+        else:
+            add_error("No empty line after Summary field in %s" % commitish)
+
+    if COMMIT_MESSAGE_CHECK and len(line_list[0]) < 5 or len(line_list[0]) > 78:
+        add_error("Wrong size (%d) of Summary field in %s" % (len(line_list[0]), commitish))
 
     while len(line_list) != 0:
         line = line_list.pop(0)
 
-        if match_or_die_if_multiply_defined(line, 'REF: ', hdr.ref):
-            hdr.ref = 1  # Not None
+        if line.find('REF: ') == 0:
+            if hdr.ref == None:
+                hdr.ref = 1  # Not None
+            elif COMMIT_MESSAGE_CHECK:
+                add_error("Field 'REF:' must be once in %s" % commitish)
+                continue
+
             if COMMIT_MESSAGE_CHECK and not Commit.rt_header_fields['REF: '].match(line[len('REF: '):]):
                 add_error("Wrong field 'REF:' in %s" % commitish)
             else:
                 hdr.ref = line[len('REF: '):]
 
-        elif match_or_die_if_multiply_defined(line, 'Signed-off-by: ', hdr.signed):
-            hdr.signed = 1  # Not None
+        elif line.find('Signed-off-by: ') == 0:
+            if hdr.signed == None:
+                hdr.signed = 1  # Not None
+            elif COMMIT_MESSAGE_CHECK:
+                add_error("Field 'Signed-off-by:' must be once in %s" % commitish)
+                continue
+
             if COMMIT_MESSAGE_CHECK and not Commit.rt_header_fields['Signed-off-by: '].match(line[len('Signed-off-by: '):]):
                 add_error("Wrong field 'Signed-off-by:' in %s" % commitish)
             else:
@@ -239,8 +254,8 @@ def check_commit_msg(commitish):
 
         elif len(line) != 0:
             hdr.desc = 1
-            if COMMIT_MESSAGE_CHECK and len(line) < 5 or len(line) >78:
-                add_error("Wrong field 'Description' in %s" % commitish)
+            if COMMIT_MESSAGE_CHECK and len(line) > 78:
+                add_error("Wrong size (%d) of field 'Description' in %s" % (len(line), commitish))
 
     if COMMIT_MESSAGE_CHECK and hdr.ref == None:
         add_error("No field 'REF:' in %s" % commitish)
